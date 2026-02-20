@@ -192,6 +192,213 @@ Transcript Turns ─────────────────────
 
 ---
 
+## Agent Orchestration Architecture
+
+The workflow is implemented as a multi-agent system: one **Orchestrator** that manages study-level state and routes work to **Specialist Agents** that each own a single concern. Agents communicate via a shared `StudyState` object — not directly with each other.
+
+```
+                    ┌─────────────────────────┐
+                    │      ORCHESTRATOR        │
+                    │                          │
+                    │  - Manages StudyState    │
+                    │  - Routes tasks          │
+                    │  - Tracks saturation     │
+                    │  - Surfaces human gates  │
+                    └──────────┬───────────────┘
+                               │
+          ┌────────────────────┼────────────────────┐
+          ▼                    ▼                    ▼
+   PRE-RESEARCH          PER-SESSION          CROSS-SESSION
+   AGENTS                AGENTS               AGENTS
+```
+
+---
+
+### Agent Registry
+
+#### Pre-Research Agents (run once per study)
+
+| Agent | Input | Output | Runs |
+|---|---|---|---|
+| **Brief Agent** | Product brief / HMW statements | Structured YAML research brief | Sequential first |
+| **Guide Generator** | Research brief | Interview guide YAML + validation report | Sequential after Brief |
+| **Codebook Seeder** | Brief + guide | Initial deductive codebook YAML | Sequential after Guide |
+
+These three run sequentially — each output is ground truth for the next.
+
+---
+
+#### Per-Session Agents (after each Askable interview)
+
+```
+Transcript file
+      │
+      ▼
+┌─────────────┐
+│   PARSER    │  ← runs first; all others depend on its output
+│   AGENT     │
+└──────┬──────┘
+       │  canonical Turn[]
+       │
+       ├──────────────────────────────────────┐
+       ▼                                      ▼
+┌──────────────────┐                ┌─────────────────────┐
+│  GUIDE COVERAGE  │                │  DEDUCTIVE CODER    │
+│  AGENT           │                │  AGENT              │
+│                  │                │                     │
+│ - Qs hit/missed  │                │ - Apply codebook    │
+│ - Depth score    │                │ - Confidence +      │
+│ - Off-script     │                │   evidence quote    │
+└────────┬─────────┘                └──────────┬──────────┘
+         │                                      │
+         └──────────────────┬───────────────────┘
+                            │  coded + annotated turns
+                            ▼
+                  ┌─────────────────────┐
+                  │  INDUCTIVE          │
+                  │  DISCOVERY AGENT    │  ← runs on uncoded turns only
+                  │                     │
+                  │  - Emergent themes  │
+                  └──────────┬──────────┘
+                             │
+                             ▼
+                  ┌─────────────────────┐
+                  │  SESSION QA AGENT   │
+                  │                     │
+                  │  - Flags low-conf   │
+                  │  - Quality scorecard│
+                  └──────────┬──────────┘
+                             │
+                             ▼
+                  ┌─────────────────────┐
+                  │  HUMAN REVIEW GATE  │  ← researcher confirms flagged codes
+                  │                     │     before anything is committed
+                  └─────────────────────┘
+```
+
+**Guide Coverage Agent** and **Deductive Coder Agent** run in **parallel** — they are fully independent on the same parsed input. This is the biggest latency reduction in the pipeline.
+
+---
+
+#### Cross-Session Agents (after each reviewed session is committed)
+
+| Agent | Role | Pattern |
+|---|---|---|
+| **Pattern Aggregator** | Updates theme heatmap across all sessions | Accumulator — diffs new session only |
+| **Saturation Monitor** | Tracks theme emergence rate; fires signal when rate drops below threshold | Event-driven trigger |
+| **Codebook Curator** | Recommends add / split / retire based on cross-session evidence | Runs every N sessions or on-demand |
+
+---
+
+#### Synthesis & Report Agents
+
+| Agent | Role | Runs |
+|---|---|---|
+| **Insight Generator** | Ranked insight statements from confirmed patterns | On-demand after researcher signals ready |
+| **Evidence Linker** | Attaches verbatim quotes + participant IDs to each insight | Sequential after Insight Generator |
+| **Report Compiler** | Assembles final report structure | Sequential after Evidence Linker; human finalises |
+
+---
+
+### Claude Capability Mapping
+
+Each agent uses the Claude capability best suited to its task — not every agent needs the most expensive call.
+
+| Capability | Where applied | Why |
+|---|---|---|
+| **Extended thinking** | Brief Agent, Codebook Seeder, Insight Generator | Multi-step reasoning across competing evidence; weighing objective hierarchy; inferring observable indicators from abstract hypotheses |
+| **Tool use** | All agents | File read/write, database queries, guide/codebook validation, heatmap queries |
+| **Structured output (Pydantic)** | Every agent boundary | Agents communicate via validated schemas — never raw text. Orchestrator always knows the shape of what it receives |
+| **Parallel subagent spawning** | Orchestrator, per session | Guide Coverage + Deductive Coder spawned simultaneously on same transcript. Also: multiple sessions can run in parallel on batch upload |
+| **`temperature=0`** | Deductive Coder | Deterministic code application; reproducible results |
+| **`temperature=0.3–0.5`** | Inductive Discovery, Insight Generator | Creative pattern recognition; emergent theme generation |
+
+---
+
+### Shared Study State
+
+Agents do not call each other — they read from and write to a shared `StudyState`. The Orchestrator owns mutation.
+
+```yaml
+StudyState:
+  study_id: str
+  research_brief: ResearchBrief
+  interview_guide: InterviewGuide
+  codebook:
+    version: int
+    codes: Code[]
+  sessions:
+    - session_id: str
+      participant_id: str
+      transcript: Turn[]
+      coverage_result: QuestionCoverageResult[]
+      coded_turns: CodedTurn[]
+      emergent_themes: EmergentTheme[]
+      quality_scorecard: SessionScorecard
+      review_status: pending | approved | rejected
+  cross_session:
+    theme_heatmap: ThemeMatrix
+    saturation_curve: float[]        # new theme emergence rate per session
+    participant_clusters: Cluster[]
+  insights: InsightStatement[]
+  report_draft: Report | null
+```
+
+Every agent output is a typed Pydantic model. The Orchestrator writes each model into the relevant `StudyState` field after validation.
+
+---
+
+### The Per-Session Feedback Loop
+
+This is the highest-value feature in the system — it makes the research process smarter across sessions, not just within them.
+
+```
+Session N complete
+      │
+      ▼
+Session QA Agent → quality scorecard
+      │
+      ▼
+Human review gate (researcher confirms/edits codes)
+      │
+      ▼
+Pattern Aggregator updates StudyState
+      │
+      ▼
+┌──────────────────────────────────────────────────┐
+│  NEXT SESSION PREP AGENT                          │
+│                                                  │
+│  Reads: current StudyState                       │
+│  Outputs: briefing delivered to researcher       │
+│  before next Askable interview                   │
+│                                                  │
+│  Example output:                                 │
+│  "In Session N+1, prioritise:                    │
+│   - FD1 (skipped in last 2 sessions)             │
+│   - Probe OB2 deeper (avg depth 2.1/5)           │
+│   - Test EMERGENT: export_pain (3/5 sessions,    │
+│     not yet in codebook — propose adding)"       │
+└──────────────────────────────────────────────────┘
+      │
+      ▼
+Researcher reads brief before Askable interview
+```
+
+---
+
+### Orchestration Patterns in Use
+
+| Pattern | Where applied |
+|---|---|
+| **Sequential pipeline** | Brief → Guide → Codebook Seeder (pre-research); Parser → Inductive → QA (per session) |
+| **Fan-out / fan-in** | Orchestrator fans out to Guide Coverage + Deductive Coder in parallel; fans back in when both complete |
+| **Accumulator** | Pattern Aggregator processes only the diff from the new session — not all sessions each time |
+| **Event-driven trigger** | Saturation Monitor watches emergence curve; fires when slope drops below threshold, prompting researcher |
+| **Human-in-the-loop gate** | After Session QA Agent; orchestrator pauses, presents flagged items, waits for researcher confirmation before committing |
+| **Feedback loop** | Session N output → Next Session Prep Agent → researcher brief → improved Session N+1 |
+
+---
+
 ## Build Phases
 
 ### Phase 1 — MVP (4–6 weeks)
@@ -324,11 +531,23 @@ PROBE:  Add to OB2 — "Did you look for help anywhere?" (surfaced organically i
 
 | Library | Purpose |
 |---|---|
-| `anthropic` | Deductive coding, depth scoring, emergent themes, synthesis |
-| `Pydantic` | Structured LLM output validation |
+| `anthropic` | All LLM calls — deductive coding, depth scoring, emergent themes, synthesis, agent orchestration |
+| `Pydantic` | Structured output validation at every agent boundary |
 | FastAPI | Backend API |
-| PostgreSQL | Data persistence |
+| PostgreSQL | Data persistence (StudyState, coded turns, cross-session heatmap) |
 | React | Frontend |
+
+### Agent Orchestration
+
+| Pattern | Implementation |
+|---|---|
+| Orchestrator | Single FastAPI service; owns `StudyState` mutation; routes tasks to specialist agents |
+| Specialist agents | Separate async functions with typed Pydantic inputs/outputs; called via Claude tool use |
+| Parallel fan-out | `asyncio.gather()` for Guide Coverage + Deductive Coder on same session |
+| Shared state | `StudyState` persisted in PostgreSQL; agents read from DB, write via Orchestrator |
+| Extended thinking | `thinking` parameter enabled on Brief Agent, Codebook Seeder, Insight Generator |
+| Human gate | Orchestrator sets `review_status=pending`; waits for researcher API call to confirm/edit before proceeding |
+| Event trigger | Saturation Monitor runs as a background task after each session commit; fires webhook to Orchestrator when threshold met |
 
 ---
 
@@ -353,3 +572,20 @@ Before sending every turn to the LLM for every code (O(n×m) calls), use `senten
 
 ### Caching
 Cache LLM responses by `hash(segment_text + code_id + model_version)`. Rerunning after codebook updates only reprocesses turns affected by changed codes.
+
+### Agent Isolation and Failure Handling
+Each specialist agent is idempotent — it can be re-run on the same input without side effects. If an agent fails, the Orchestrator retries with exponential backoff (2s, 4s, 8s, 16s) before surfacing an error to the researcher. Partial results are never committed to `StudyState` — writes are transactional.
+
+### Parallelism Budget
+Running Guide Coverage and Deductive Coder in parallel doubles the Claude API concurrency per session. Set a per-study concurrency cap (default: 5 parallel agent calls) to avoid rate limit exhaustion on batch uploads of multiple sessions.
+
+### Extended Thinking vs. Standard for Each Agent
+Use extended thinking (`budget_tokens=8000`) only where multi-step reasoning across competing evidence is required:
+- Brief Agent (objective hierarchy)
+- Codebook Seeder (hypothesis → observable indicator inference)
+- Insight Generator (weighing frequency vs. salience vs. objective alignment)
+
+Use standard (no thinking) for all other agents — deductive coding, parsing, guide coverage, report compilation. Thinking adds latency and cost where the task is structured and deterministic.
+
+### Structured Output Contract
+Every agent function has a typed signature: `agent_fn(input: AgentInput) -> AgentOutput`. The Orchestrator never passes raw text between agents. If a Claude response fails Pydantic validation, the Orchestrator retries once with an explicit correction prompt before raising to the researcher. This makes the pipeline auditable — every agent's output is a stored, versioned record.
