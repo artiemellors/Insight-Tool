@@ -118,7 +118,689 @@ A principled answer to "when do we have enough data?" Cross-session theme tracki
 
 ---
 
-## Inputs (Machine-Readable from Day One)
+## User Flow & Interface Design
+
+### Interface Types
+
+Two modes are used throughout the tool — chosen based on the nature of the task at each stage:
+
+| Type | When used | Why |
+|---|---|---|
+| **Structured view** | Displaying and editing codebooks, guides, annotated transcripts, heatmaps | Researcher needs to scan, compare, and edit structured data efficiently |
+| **Conversational UI** | Human review gate, codebook curation, next session prep, synthesis Q&A | Researcher needs to explain a judgement call in plain language; system must interpret and apply it |
+
+---
+
+### Overall Journey Map
+
+```
+STUDY SETUP        PRE-RESEARCH          PER SESSION           CROSS-SESSION         SYNTHESIS          REPORT
+    │                    │                    │                      │                    │                 │
+Create study    Brief → Guide →         Upload transcript      View heatmap         Review insights   Preview &
+                Codebook seed           Anonymise + analyse    Curate codebook      Edit statements   export
+                                        Human review gate      Saturation check
+                                        Next session prep
+                                             │
+                                        [repeat per session]
+```
+
+---
+
+### Stage 0 — Study Setup
+
+**Interface type:** Structured form
+
+**Screen: New Study**
+
+| Field | Input type | Notes |
+|---|---|---|
+| Study name | Text | e.g. "Onboarding — Feb 2026" |
+| Product area | Text or select | Context for AI throughout |
+| HMW statements | Multi-line text | "How might we..." framing |
+| Research objectives | Multi-line text | The questions we need to answer |
+| Participant criteria | Text | Who is being recruited |
+| Target session count | Number | How many interviews planned |
+| Participant ID scheme | Radio | Auto-generated (P01, P02...) or custom prefix |
+| AI analysis consent | Checkbox | Researcher confirms participants were informed this interview may be analysed by AI |
+
+**Actions:**
+- Save draft
+- Generate Brief — triggers Brief Agent, produces structured YAML research brief
+- View generated brief (read-only preview, researcher confirms or edits)
+
+**Human judgement moment:** Researcher reviews the structured brief the AI has generated from their freeform inputs and confirms it accurately represents their intent before any downstream agents use it as ground truth.
+
+---
+
+### Stage 1 — Guide Review
+
+**Interface type:** Structured view with inline edit
+
+**Screen: Interview Guide**
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  Section: Core Questions                    [+ Add section] │
+├─────────────────────────────────────────────────────────────┤
+│  OB1  Walk me through your first login         [Required]   │
+│       Mapped to: Objective 1                               │
+│       Probes: "What did you expect to see?" /              │
+│       "Were you surprised by anything?"                    │
+│       [Edit]  [Delete]  [Mark optional]                    │
+├─────────────────────────────────────────────────────────────┤
+│  ⚠️  OB3  Do you prefer X or Y?               [Flagged]    │
+│       Issue: Leading question — assumes preference exists  │
+│       Suggestion: "How do you think about X?"              │
+│       [Accept suggestion]  [Edit manually]  [Dismiss]      │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**Validation panel (right sidebar):**
+- Questions mapped to objectives — any objectives uncovered?
+- Flagged questions (leading, ambiguous, out of scope)
+- Estimated session duration based on question count
+
+**Actions:**
+- Edit any question inline
+- Accept / dismiss AI flags
+- Reorder sections (drag)
+- Add / delete questions
+- Lock guide — creates v1 baseline; any subsequent changes are versioned and flagged in cross-session analysis
+
+**Human judgement moment:** Researcher locks the guide. This is a commitment — any changes after this point are tracked as a new version and surfaced in cross-session analysis (e.g. "Q added after session 2").
+
+---
+
+### Stage 2 — Codebook Review
+
+**Interface type:** Structured view with inline edit
+
+**Screen: Codebook**
+
+```
+┌────────────────────────────────────────────────────────────────┐
+│  Theme: NAVIGATION CONFUSION            [Deductive]  v1        │
+│                                                                │
+│  Codes                                                         │
+│  ├── CONFUSION_NAV                                             │
+│  │     Definition: Participant expresses difficulty            │
+│  │     locating a UI element or understanding layout           │
+│  │     Indicators: "couldn't find", "kept clicking",           │
+│  │     "didn't know where"                                     │
+│  │     Example: "I just kept clicking different tabs"          │
+│  │     [Edit]  [Delete]                                        │
+│  └── CONFUSION_MENTAL_MODEL                                    │
+│        Definition: Participant's expectation of system         │
+│        behaviour does not match actual behaviour               │
+│        [Edit]  [Delete]                                        │
+│                                                                │
+│  [+ Add code]                                                  │
+└────────────────────────────────────────────────────────────────┘
+```
+
+**Actions:**
+- Edit code definition, indicators, example quotes
+- Add / delete codes
+- Drag codes between themes
+- Add new theme
+- Lock codebook — creates v1 baseline
+
+**Human judgement moment:** Researcher confirms the codebook accurately reflects their hypotheses before the first session runs deductive coding against it.
+
+---
+
+### Stage 3 — Transcript Upload (Per Session)
+
+**Interface type:** Upload → anonymisation review → progress
+
+This is a three-step sequence. No AI analysis begins until anonymisation is confirmed.
+
+**Step 1 — Upload**
+
+```
+┌─────────────────────────────────────────────────────┐
+│  Session 3 of 8  ·  Participant: P03                │
+│                                                     │
+│  ┌─────────────────────────────────────────────┐   │
+│  │  Drag transcript file here                  │   │
+│  │  or click to browse                         │   │
+│  │  .vtt  .srt  .docx  .pdf  .txt  .json       │   │
+│  └─────────────────────────────────────────────┘   │
+│                                                     │
+│  Detected format: VTT                               │
+│  Duration: 52 min  ·  Turns: 184                    │
+│                                                     │
+│  [Scan for personal information]                    │
+└─────────────────────────────────────────────────────┘
+```
+
+**Step 2 — Anonymisation review (human gate — see Privacy section)**
+
+Researcher reviews and confirms all PII redactions before any AI call is made. Original transcript is discarded at the end of this step.
+
+**Step 3 — Processing progress**
+
+```
+  ✓  Format detected — VTT
+  ✓  Parsed to 184 turns
+  ✓  Anonymised — original discarded
+  ●  Guide coverage analysis...
+  ●  Deductive coding...         ← parallel
+     Inductive pass  (waiting)
+     Session QA  (waiting)
+```
+
+---
+
+### Stage 4 — Session Analysis (Per Session)
+
+**Interface type:** Multi-panel structured view
+
+```
+┌──────────────────┬──────────────────────────┬─────────────────────┐
+│  GUIDE COVERAGE  │  ANNOTATED TRANSCRIPT    │  CODES              │
+│                  │                          │                     │
+│  OB1  ████  4/5  │  [00:12:34] [PARTICIPANT]│  Active filters:    │
+│  OB2  ██    2/5  │  "I just kept clicking   │  All codes  ▼       │
+│  OB3  ████  4/5  │   on different tabs."    │                     │
+│  FD1  —     —    │  CONFUSION_NAV  ★★★      │  CONFUSION_NAV  12  │
+│  FD2  ███   3/5  │  WORKAROUND_SELF  ★★     │  WORKAROUND  8      │
+│                  │  OB2  depth 3/5          │  DELIGHT  2         │
+│  Skipped: FD1    │                          │  [EMERGENT]         │
+│  [See why]       │  [00:13:15] [PARTICIPANT]│  export_pain  4     │
+│                  │  "I honestly just        │                     │
+│  Coverage: 80%   │   Googled it."           │                     │
+│  Avg depth: 3.2  │  WORKAROUND_EXT  ★★★    │                     │
+└──────────────────┴──────────────────────────┴─────────────────────┘
+```
+
+All quotes shown are already anonymised — participant names replaced with `[PARTICIPANT]` etc. prior to this view.
+
+**Actions — Transcript panel:**
+- Click any turn to see its full coding detail
+- Filter turns by code, depth score, confidence level, or guide question
+- Flag a turn as noise (exclude from analysis)
+- Add a manual code to a turn
+
+**Actions — Coverage panel:**
+- Click any question to jump to the first turn that covers it
+- See depth breakdown (specificity / elaboration / emotional salience / actionability)
+- See off-script classification for uncovered segments
+
+**Actions — Codes panel:**
+- Filter transcript by clicking a code
+- Hover to see definition
+
+---
+
+### Stage 5 — Human Review Gate (Per Session)
+
+**Interface type:** Conversational panel
+
+Triggered automatically after Session QA Agent runs. Appears as a slide-in panel over the analysis screen. Nothing is committed to StudyState until the researcher completes this step.
+
+```
+┌────────────────────────────────────────────────────────────────┐
+│  Review — Session 3                              3 items       │
+│                                                                │
+│  I've flagged 3 codes for your review before committing        │
+│  this session's results.                                       │
+│                                                                │
+│  1 / 3                                                         │
+│                                                                │
+│  [00:24:11]  "It sort of reminded me of how my bank app works" │
+│                                                                │
+│  Proposed: CONFUSION_MENTAL_MODEL  (confidence 0.51)          │
+│                                                                │
+│  I'm uncertain — this could be a mental model mismatch,        │
+│  or just an analogy. How do you read it?                      │
+│                                                                │
+│  [Confirm code]  [Change to...]  [Mark as noise]  [Skip]      │
+│                                                                │
+│  ── or type a response ────────────────────────────────────── │
+│  > That's actually DELIGHT — they liked the familiarity       │
+│                                                                │
+│  Got it — coded as DELIGHT (confidence overridden by          │
+│  researcher). Moving to item 2.                                │
+│                                                                │
+└────────────────────────────────────────────────────────────────┘
+```
+
+**Actions:**
+- Confirm proposed code
+- Select alternative code from list
+- Type a free-text correction (Claude interprets and applies)
+- Mark as noise (no code)
+- Skip (leave pending for later)
+- Commit all reviewed codes and continue
+
+**Human judgement moment:** The most important gate in the system. Nothing is written to StudyState until the researcher has reviewed flagged items.
+
+---
+
+### Stage 6 — Next Session Prep (Per Session)
+
+**Interface type:** Conversational brief + structured summary
+
+Shown after the human review gate is completed. Researcher reads this before their next interview.
+
+```
+┌────────────────────────────────────────────────────────────────┐
+│  Session 4 Prep Brief                                          │
+│                                                                │
+│  ── Push harder ─────────────────────────────────────────      │
+│  OB2 (avg depth 2.1/5 across 3 sessions)                      │
+│  The probe "Did you look for help anywhere?" worked in         │
+│  session 3 but wasn't used in 1 or 2. Use it.                  │
+│                                                                │
+│  ── Consistently skipped ────────────────────────────────      │
+│  FD1 — skipped in all 3 sessions. Consider moving it           │
+│  earlier in the guide before OB2 runs long.                    │
+│                                                                │
+│  ── Worth testing ───────────────────────────────────────      │
+│  EMERGENT: export_pain has appeared in 3/3 sessions            │
+│  but isn't in your codebook or guide. Probe for it             │
+│  directly — try: "Tell me about a time you tried to get        │
+│  information out of the product."                              │
+│                                                                │
+│  [Ask a question]          [Dismiss]  [Export as PDF]          │
+└────────────────────────────────────────────────────────────────┘
+```
+
+**Actions:**
+- Ask follow-up questions in natural language
+- Dismiss / archive brief
+- Export as PDF to take into the Askable session
+
+---
+
+### Stage 7 — Cross-Session Dashboard
+
+**Interface type:** Structured views with conversational sidebar
+
+Accessible at any point after session 2. Updates after each committed session.
+
+**Screen: Heatmap**
+
+```
+┌───────────────────────────────────────────────────────────────┐
+│  Theme Heatmap  ·  Sessions 1–5 of 8                         │
+│                                                               │
+│  Filter by: All themes ▼   All segments ▼                    │
+│                                                               │
+│                      P01  P02  P03  P04  P05                  │
+│  CONFUSION_NAV        ██   ██   █    ██   ██                  │
+│  CONFUSION_MM         ██   █    ██   —    █                   │
+│  WORKAROUND_EXT       █    —    ██   █    —                   │
+│  DELIGHT              —    █    —    —    █                   │
+│  EXPORT_PAIN *        █    ██   —    ██   ██   ← emergent     │
+│                                                               │
+│  * Not yet in codebook                                        │
+│                                                               │
+│  [Add EXPORT_PAIN to codebook]  [Ask about this pattern]     │
+└───────────────────────────────────────────────────────────────┘
+```
+
+Participant references are always IDs (P01, P02...) — never real names.
+
+**Screen: Saturation**
+
+```
+┌───────────────────────────────────────────────────────────────┐
+│  Saturation Tracker                                           │
+│                                                               │
+│  New themes per session                                       │
+│  S1  ████████████  6 new                                      │
+│  S2  ██████        3 new                                      │
+│  S3  ████          2 new                                      │
+│  S4  ██            1 new                                      │
+│  S5  █             1 new                                      │
+│                                                               │
+│  ⚡  Rate is declining. If session 6 produces 0–1 new         │
+│     themes, you may have reached saturation.                  │
+│                                                               │
+│  [Continue to session 6]   [Stop collecting, go to synthesis] │
+└───────────────────────────────────────────────────────────────┘
+```
+
+**Actions:**
+- Filter heatmap by theme, participant, session range
+- Click any cell to see supporting (anonymised) quotes
+- Accept saturation signal → transitions study to Synthesis phase
+- Ask cross-session questions in conversational sidebar ("Which participants showed both CONFUSION_NAV and WORKAROUND_EXT?")
+
+---
+
+### Stage 8 — Codebook Curation
+
+**Interface type:** Conversational panel
+
+Runs every N sessions or on-demand.
+
+```
+┌────────────────────────────────────────────────────────────────┐
+│  Codebook Review  ·  After session 5            4 items        │
+│                                                                │
+│  ── ADD ────────────────────────────────────────────────      │
+│  EXPORT_PAIN — appeared in 4/5 sessions, high salience.       │
+│  Suggested definition: "Participant expresses frustration      │
+│  or friction when attempting to extract data or content        │
+│  from the product."                                            │
+│  [Accept]  [Edit definition]  [Reject]                        │
+│                                                                │
+│  ── SPLIT ──────────────────────────────────────────────      │
+│  CONFUSION_NAV is being applied to two distinct patterns:      │
+│  navigation layout confusion vs. information architecture.     │
+│  Suggested: CONFUSION_NAV_LAYOUT + CONFUSION_NAV_IA           │
+│  [Accept split]  [Keep as one]  [Discuss]                     │
+│                                                                │
+│  ── RETIRE ─────────────────────────────────────────────      │
+│  DELIGHT — only 2/5 sessions, confidence consistently low.    │
+│  Suggested: collapse into POSITIVE_MOMENT (broader).          │
+│  [Accept]  [Keep]                                              │
+└────────────────────────────────────────────────────────────────┘
+```
+
+**Actions:**
+- Accept / reject each recommendation individually
+- Edit suggested definitions inline before accepting
+- Ask for reasoning in natural language
+- Apply approved changes → bumps codebook to next version, change logged in history
+
+---
+
+### Stage 9 — Synthesis
+
+**Interface type:** Structured list + conversational sidebar
+
+**Screen: Insights**
+
+```
+┌────────────────────────────────────────────────────────────────┐
+│  Candidate Insights                    Sort: Frequency ▼       │
+│                                                                │
+│  ── Insight 1 ────────────────────────────────────────────    │
+│  Participants consistently find workarounds rather than        │
+│  contacting support when stuck.                                │
+│                                                                │
+│  Evidence: 5/5 participants  ·  12 coded instances             │
+│  Codes: WORKAROUND_SELF + WORKAROUND_EXT                       │
+│  Salience: High  ·  Objective alignment: OB2 ✓                 │
+│                                                                │
+│  Supporting quotes (3 shown of 12)  [Expand]                  │
+│  "I honestly just Googled it." — P01                          │
+│  "I asked a colleague, I didn't think there was help          │
+│   in the app." — P03                                          │
+│                                                                │
+│  [Accept]  [Edit statement]  [Reject]  [Merge with...]        │
+└────────────────────────────────────────────────────────────────┘
+```
+
+All quotes attributed to participant IDs only.
+
+**Actions:**
+- Accept / edit / reject each insight
+- Reorder accepted insights (drag)
+- Merge two insights into one
+- Ask cross-session questions ("Are there participants who bucked this pattern?")
+- Promote accepted insights to report
+
+---
+
+### Stage 10 — Report
+
+**Interface type:** Structured document view + export
+
+```
+┌────────────────────────────────────────────────────────────────┐
+│  Research Report — Onboarding Feb 2026                        │
+│                                                                │
+│  KEY INSIGHTS                                                  │
+│  1. Users default to self-service workarounds over in-product  │
+│     help — indicating a trust deficit in the help system.      │
+│     [Edit]                                                     │
+│                                                                │
+│  OBSERVATIONS                                                  │
+│  - FD1 was consistently skipped — consider restructuring the   │
+│    guide section order for future studies.                     │
+│  - EXPORT_PAIN emerged in 4/5 sessions and was not in the      │
+│    original brief — warrants a dedicated follow-up study.      │
+│                                                                │
+│  RECOMMENDATIONS  ...                                          │
+│                                                                │
+│  [Export PDF]  [Export DOCX]  [Export annotated transcript]   │
+│  [Export codebook YAML]  [Export heatmap CSV]                  │
+└────────────────────────────────────────────────────────────────┘
+```
+
+**Actions:**
+- Edit any section inline
+- Reorder insights
+- Export in multiple formats (all exports use anonymised data)
+
+---
+
+### Navigation Structure
+
+```
+STUDIES
+└── [Study name]
+    ├── Brief
+    ├── Guide             (locked after first session, versioned)
+    ├── Codebook          (versioned — v1, v2...)
+    ├── Sessions
+    │   ├── Session 1     (upload → anonymise → analyse → review → prep)
+    │   ├── Session 2
+    │   └── ...
+    ├── Cross-Session
+    │   ├── Heatmap
+    │   ├── Saturation
+    │   └── Codebook Curation
+    ├── Insights
+    ├── Report
+    └── Data & Privacy
+```
+
+---
+
+### Key Human Judgement Moments
+
+These are the gates that must be designed to feel trustworthy, not bureaucratic:
+
+| Gate | Stage | What the researcher decides |
+|---|---|---|
+| Brief confirmation | Pre-research | Does this accurately represent my intent? |
+| Guide lock | Pre-research | Am I happy to run interviews against this? |
+| Codebook lock | Pre-research | Do my hypotheses map to these codes? |
+| Anonymisation review | Per session | Is the PII detection correct before the original is discarded? |
+| Per-session code review | Per session | Are these flagged codes correct? |
+| Saturation decision | Cross-session | Do I have enough data to stop collecting? |
+| Codebook curation | Cross-session | What changes does the evidence support? |
+| Insight approval | Synthesis | Which of these statements do I stand behind? |
+
+Every one of these should be conversational, not a form. The researcher should be able to explain their decision in plain language and have the system interpret it correctly.
+
+---
+
+## Privacy & Data Security
+
+### Core Principles
+
+These are design constraints, not features. They apply to every stage and every agent call:
+
+- **Anonymise before AI sees anything** — the original transcript is never sent to an LLM. Only the anonymised version is processed.
+- **No real names anywhere in the system** — participants are referenced by generated IDs only (P01, P02...).
+- **Quotes propagate anonymised** — every quote in reviews, insights, and reports is already stripped of PII.
+- **Original is transient** — the raw transcript is processed locally and discarded after the researcher confirms anonymisation. Only the anonymised version is stored.
+- **Researcher holds the ID mapping** — the tool generates participant IDs but does not store the mapping between those IDs and real people. That mapping stays with the researcher.
+- **Researcher controls retention** — explicit delete-study action purges all associated data.
+
+---
+
+### Anonymisation Pipeline
+
+The upload flow is a strict two-step sequence. No AI analysis begins until the researcher has confirmed anonymisation:
+
+```
+Upload transcript
+      │
+      ▼
+PII scan (local — before any AI call)
+      │
+      ▼
+Anonymisation review ← HUMAN GATE
+      │
+      ▼
+Discard original ← PERMANENT
+      │
+      ▼
+AI analysis runs on anonymised text only
+      │
+      ▼
+All downstream: quotes, insights, report — anonymised throughout
+```
+
+---
+
+### Anonymisation Review Screen
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  Anonymisation review  ·  Session 3                             │
+│                                                                 │
+│  Found 14 items that may contain personal information.          │
+│  Review each and confirm before analysis runs.                  │
+│  The original file will be permanently discarded after this.    │
+│                                                                 │
+│  ── Auto-redacted (high confidence) ─────────────────────────   │
+│  ✓  "My name is Sarah" → "My name is [PARTICIPANT]"            │
+│  ✓  "sarah@example.com" → "[EMAIL]"                            │
+│  ✓  [INTERVIEWER] applied to all researcher turns               │
+│                                                                 │
+│  ── Needs your decision (low confidence) ────────────────────   │
+│                                                                 │
+│  1 / 3                                                          │
+│  "...my manager John kept asking about it..."                   │
+│  Possible third-party name detected: "John"                     │
+│                                                                 │
+│  [Redact → "my manager [NAME]"]   [Keep as-is]                 │
+│                                                                 │
+│  ── Sensitive content flagged ───────────────────────────────   │
+│  [00:34:22]  Participant disclosed a health condition.          │
+│  This segment has been auto-excluded from coding.              │
+│  [Review segment]  [Confirm exclusion]                         │
+│                                                                 │
+│  [Confirm all & discard original]                               │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### PII Detection Table
+
+| PII type | Replacement token | Default behaviour |
+|---|---|---|
+| Participant's name | `[PARTICIPANT]` | Auto-redact if high confidence |
+| Interviewer's name | `[INTERVIEWER]` | Auto-redact always |
+| Third-party names | `[NAME]` | Flag for researcher review |
+| Email addresses | `[EMAIL]` | Auto-redact always |
+| Phone numbers | `[PHONE]` | Auto-redact always |
+| Company names | `[COMPANY]` | Flag for researcher review |
+| Locations (city, suburb) | `[LOCATION]` | Flag for researcher review |
+| Sensitive disclosures | Segment excluded | Flag for researcher review |
+
+**Implementation:** Microsoft Presidio (`presidio-analyzer`) for PII detection, run locally before any network call. High-confidence detections (score > 0.85) are auto-redacted; lower-confidence are surfaced for researcher review.
+
+---
+
+### Data Storage Model
+
+```
+┌───────────────────────────────────────────────────────────────────┐
+│  STORED                               NOT STORED                  │
+│                                                                   │
+│  ✓ Anonymised transcript              ✗ Original transcript        │
+│  ✓ Participant IDs (P01, P02...)       ✗ Participant real names    │
+│  ✓ Codes applied to turns             ✗ Askable profile data       │
+│  ✓ Anonymised quotes                  ✗ Sensitive disclosures      │
+│  ✓ Codebook + guide (versioned)       ✗ Recruiter/screener data    │
+│  ✓ Insights + report                  ✗ ID-to-name mapping         │
+└───────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### StudyState — Privacy-Relevant Fields
+
+The `sessions` entry in StudyState stores only the anonymised transcript. The original file path is never persisted:
+
+```yaml
+sessions:
+  - session_id: str
+    participant_id: str          # e.g. "P03" — not a real name
+    transcript: Turn[]           # anonymised turns only — original discarded
+    anonymisation_log:           # audit record of what was redacted
+      auto_redacted: int         # count of auto-redactions
+      researcher_reviewed: int   # count of items reviewed by researcher
+      exclusions: int            # segments excluded (sensitive disclosures)
+    coverage_result: QuestionCoverageResult[]
+    coded_turns: CodedTurn[]
+    emergent_themes: EmergentTheme[]
+    quality_scorecard: SessionScorecard
+    review_status: pending | approved | rejected
+```
+
+---
+
+### Data & Privacy Settings Screen
+
+Accessible from the study navigation under **Data & Privacy**:
+
+```
+┌───────────────────────────────────────────────────────────────┐
+│  Data & Privacy  ·  Onboarding Feb 2026                       │
+│                                                               │
+│  Stored data                                                  │
+│  5 anonymised transcripts  ·  1 codebook  ·  12 insights      │
+│  Original transcripts: not stored                             │
+│                                                               │
+│  Participant ID mapping                                       │
+│  You hold the mapping between IDs and real participants.      │
+│  This tool does not store or have access to that mapping.     │
+│                                                               │
+│  Retention                                                    │
+│  Auto-delete study data after:  [6 months ▼]                  │
+│                                                               │
+│  ───────────────────────────────────────────────────────      │
+│                                                               │
+│  [Delete all study data]                                      │
+│  This permanently removes all transcripts, codes, insights,   │
+│  and report data. This cannot be undone.                      │
+└───────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### Researcher-Facing Language
+
+Avoid legalistic privacy copy. Use plain, honest language throughout:
+
+| Instead of | Use |
+|---|---|
+| "We process your data in accordance with..." | "We anonymise before analysis. Originals are discarded." |
+| "Consent confirmed" | "Participants were informed this interview may be AI-analysed" |
+| "PII detected" | "Found information that could identify someone" |
+| "GDPR compliant" | "Real names are never stored in this tool" |
+
+A persistent indicator appears throughout the app wherever quotes or participant data are shown:
+
+```
+  🔒  All quotes anonymised  ·  Original transcripts not stored
+```
+
+---
+
+
 
 ### Research Brief (YAML)
 - Research objectives — the questions we need to answer
