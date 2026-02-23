@@ -10,15 +10,15 @@ Build an AI-assisted tool that analyses customer interview transcripts and/or vi
 
 ## Research Process
 
-Our research process follows five core steps. The researcher leads throughout; AI augments the labour-intensive middle steps.
+Five steps from raw inputs to finished report. The researcher uploads and reviews; AI does the analytical heavy lifting.
 
-| Step | Activity | Who leads | AI role |
-|---|---|---|---|
-| 1 | **Research Plan** — Define research focus, objectives, and interview guide (sections containing questions) | Researcher | None — this is the researcher's domain |
-| 2 | **Organise Data** — Take raw interview transcripts and order responses against the corresponding guide sections/questions | Researcher reviews | AI does the heavy lifting — maps transcript turns to guide questions |
-| 3 | **Pull Out Themes** — Work through organised transcripts and surface emergent themes within each individual interview | Researcher reviews | AI proposes candidate themes with supporting quotes |
-| 4 | **Insights** — Compare all interviews and themes with each other; synthesise insights by identifying shared patterns, common pains, and alike themes. Summarise each insight in a sentence, pull out a hero quote, and provide clear citations and source trail | Researcher reviews & edits | AI generates candidate insights, ranks by evidence strength, links citations |
-| 5 | **Report** — Compile the final deliverable | Researcher finalises | AI assembles draft structure from approved insights |
+| Step | Activity | What happens |
+|---|---|---|
+| 1 | **Upload Research Guide** | Researcher uploads their research guide. AI analyses the guide structure — identifies sections, questions, and objectives — so it can use this as the framework for all downstream analysis. |
+| 2 | **Upload & Organise Transcripts** | Researcher uploads raw interview transcripts. AI parses them into speaker turns and organises responses against the corresponding guide sections and questions. Researcher reviews the mappings. |
+| 3 | **Theme Analysis** | AI works through each organised transcript individually and surfaces emergent themes with supporting quotes. Researcher reviews, merges, or discards themes per transcript. |
+| 4 | **Insight Synthesis** | AI merges themes across all interview transcripts — identifies shared patterns, common pains, and alike themes. Generates candidate insights: a one-sentence summary capturing the essence, a hero quote that illustrates it, and clear citations with source trail. Researcher reviews and edits. |
+| 5 | **Insight & Recommendation Report** | AI compiles the final deliverable: robust evidence trail, concise insight summaries, and useful visualisations. Researcher finalises before delivery. |
 
 ---
 
@@ -26,59 +26,65 @@ Our research process follows five core steps. The researcher leads throughout; A
 
 ```
 ╔══════════════════════════════════════════════════════════════╗
-║  STEP 1 — RESEARCH PLAN  (researcher-led, no AI)            ║
+║  STEP 1 — UPLOAD RESEARCH GUIDE                              ║
 ║                                                              ║
-║  Research focus & objectives                                 ║
-║  Interview guide: sections → questions                       ║
-║                                                              ║
-║  This is the researcher's domain — AI does not generate      ║
-║  or modify the plan. It becomes the ground truth for all     ║
-║  downstream analysis.                                        ║
+║  Researcher uploads their guide                              ║
+║         │                                                    ║
+║         └──► AI analyses guide structure                      ║
+║              Identifies sections, questions, objectives       ║
+║              This becomes the framework for all analysis      ║
 ╚══════════════════════════════════════════════════════════════╝
                           │
                           ▼  [Interviews run on Askable]
 ╔══════════════════════════════════════════════════════════════╗
-║  STEP 2 — ORGANISE DATA  (AI-led, researcher reviews)        ║
+║  STEP 2 — UPLOAD & ORGANISE TRANSCRIPTS                      ║
 ║                                                              ║
-║  Upload transcripts → parse to speaker turns                 ║
+║  Researcher uploads raw transcripts                          ║
 ║         │                                                    ║
-║         └──► Map each turn to guide sections/questions        ║
-║              Researcher reviews and corrects mappings         ║
+║         ├──► AI parses into speaker turns                     ║
+║         │                                                    ║
+║         └──► AI organises responses against guide             ║
+║              sections and questions                           ║
+║              Researcher reviews mappings                      ║
 ╚══════════════════════════════════════════════════════════════╝
                           │
                           ▼
 ╔══════════════════════════════════════════════════════════════╗
-║  STEP 3 — PULL OUT THEMES  (AI-led, researcher reviews)      ║
+║  STEP 3 — THEME ANALYSIS  (per transcript)                   ║
 ║                                                              ║
 ║  For each organised transcript:                              ║
 ║         │                                                    ║
-║         └──► Surface emergent themes with supporting quotes   ║
-║              Researcher reviews, merges, or discards themes  ║
+║         └──► AI surfaces emergent themes with                 ║
+║              supporting quotes                                ║
+║              Researcher reviews, merges, or discards          ║
 ╚══════════════════════════════════════════════════════════════╝
                           │
                           ▼
 ╔══════════════════════════════════════════════════════════════╗
-║  STEP 4 — INSIGHTS  (AI-led, researcher reviews & edits)     ║
+║  STEP 4 — INSIGHT SYNTHESIS  (across all transcripts)        ║
 ║                                                              ║
-║  Compare all interviews and themes with each other           ║
+║  AI merges themes across all interviews                      ║
 ║         │                                                    ║
-║         ├──► Identify shared patterns, common pains,         ║
-║         │    alike themes across participants                 ║
+║         ├──► Shared patterns, common pains, alike themes      ║
 ║         │                                                    ║
-║         ├──► Generate candidate insight statements            ║
-║         │    Each: one-sentence summary + hero quote          ║
+║         ├──► Candidate insights: one-sentence summary         ║
+║         │    + hero quote that illustrates it                 ║
 ║         │                                                    ║
-║         └──► Provide citations and source trail               ║
+║         └──► Citations and source trail for each              ║
 ║                                                              ║
-║  Researcher reviews, edits, and approves insights            ║
+║  Researcher reviews, edits, and approves                     ║
 ╚══════════════════════════════════════════════════════════════╝
                           │
                           ▼
 ╔══════════════════════════════════════════════════════════════╗
-║  STEP 5 — REPORT  (AI drafts, researcher finalises)          ║
+║  STEP 5 — INSIGHT & RECOMMENDATION REPORT                    ║
 ║                                                              ║
-║  Key Insights → Observations → Recommendations               ║
-║  All claims linked to evidence and source quotes             ║
+║  AI compiles final deliverable:                              ║
+║         │                                                    ║
+║         ├──► Robust evidence trail                            ║
+║         ├──► Concise insight summaries                        ║
+║         └──► Useful visualisations                            ║
+║                                                              ║
 ║  Researcher reviews and finalises before delivery            ║
 ╚══════════════════════════════════════════════════════════════╝
 ```
