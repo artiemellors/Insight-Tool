@@ -8,113 +8,80 @@ Build an AI-assisted tool that analyses customer interview transcripts and/or vi
 
 ---
 
-## Current Research Process
+## Research Process
 
-The baseline process this tool is designed to support and augment:
+Our research process follows five core steps. The researcher leads throughout; AI augments the labour-intensive middle steps.
 
-| Step | Activity | Current State |
-|---|---|---|
-| 1 | Theme research & discovery plan objectives | Manual — lives in a document |
-| 2 | Create interview guide to target research objectives | Manual — unstructured doc |
-| 3 | Interview customers on Askable platform | Human-led |
-| 4 | Take raw transcript files → organise answers against guide | Partially AI-assisted |
-| 5 | Analyse cleaned transcripts → compare for patterns & themes | Manual, labour-intensive |
-| 6 | Synthesise insights with citations and evidence trail | Manual |
-| 7 | Compile report: Key Insights, Observations, Recommendations | Manual |
-
-**Key problems:**
-- Inputs (objectives, guide, codebook) are unstructured — AI can only bolt on at step 4
-- Steps run waterfall — session 1 can't inform session 2's approach
-- "Organise answers against the guide" is under-ambitious — sorting, not analysis
-- No principled signal for when you have enough data (saturation)
-- Codebook is implicit, not explicit — limits systematic analysis
+| Step | Activity | Who leads | AI role |
+|---|---|---|---|
+| 1 | **Research Plan** — Define research focus, objectives, and interview guide (sections containing questions) | Researcher | None — this is the researcher's domain |
+| 2 | **Organise Data** — Take raw interview transcripts and order responses against the corresponding guide sections/questions | Researcher reviews | AI does the heavy lifting — maps transcript turns to guide questions |
+| 3 | **Pull Out Themes** — Work through organised transcripts and surface emergent themes within each individual interview | Researcher reviews | AI proposes candidate themes with supporting quotes |
+| 4 | **Insights** — Compare all interviews and themes with each other; synthesise insights by identifying shared patterns, common pains, and alike themes. Summarise each insight in a sentence, pull out a hero quote, and provide clear citations and source trail | Researcher reviews & edits | AI generates candidate insights, ranks by evidence strength, links citations |
+| 5 | **Report** — Compile the final deliverable | Researcher finalises | AI assembles draft structure from approved insights |
 
 ---
 
-## Improved Process with AI & Agentic Flows
+## How AI Works With Us
 
 ```
 ╔══════════════════════════════════════════════════════════════╗
-║  PRE-RESEARCH                                                ║
+║  STEP 1 — RESEARCH PLAN  (researcher-led, no AI)            ║
 ║                                                              ║
-║  Research Brief (structured YAML)                            ║
-║    Objectives → hypotheses → participant criteria            ║
-║         │                                                    ║
-║         ▼                                                    ║
-║  AI-assisted Interview Guide                                 ║
-║    Generated from brief → probes suggested                   ║
-║    Flags: leading questions, gaps vs. objectives             ║
-║         │                                                    ║
-║         ▼                                                    ║
-║  Codebook / Theme Guide (explicit YAML)                      ║
-║    Themes expected from hypotheses → deductive codes         ║
+║  Research focus & objectives                                 ║
+║  Interview guide: sections → questions                       ║
+║                                                              ║
+║  This is the researcher's domain — AI does not generate      ║
+║  or modify the plan. It becomes the ground truth for all     ║
+║  downstream analysis.                                        ║
 ╚══════════════════════════════════════════════════════════════╝
                           │
                           ▼  [Interviews run on Askable]
 ╔══════════════════════════════════════════════════════════════╗
-║  PER SESSION  (runs after each interview — not in batch)     ║
+║  STEP 2 — ORGANISE DATA  (AI-led, researcher reviews)        ║
 ║                                                              ║
-║  Ingest from Askable → auto-detect format → parse to turns   ║
+║  Upload transcripts → parse to speaker turns                 ║
 ║         │                                                    ║
-║         ├──► Guide Coverage Analysis                         ║
-║         │      Which questions covered? Depth scored?        ║
-║         │      Probes used? Off-script moments classified?   ║
-║         │                                                    ║
-║         ├──► Deductive Coding (against codebook)             ║
-║         │      Apply expected themes → confidence + quote    ║
-║         │                                                    ║
-║         ├──► Inductive Pass (uncoded turns)                  ║
-║         │      What emerged not in guide or codebook?        ║
-║         │                                                    ║
-║         ├──► Human Review Gate ← low-confidence codes        ║
-║         │                                                    ║
-║         └──► Session Quality Scorecard                       ║
-║                Feeds back into next interview preparation    ║
-╚══════════════════════════════════════════════════════════════╝
-                          │
-                          ▼  [Updated after each new session]
-╔══════════════════════════════════════════════════════════════╗
-║  CROSS-SESSION                                               ║
-║                                                              ║
-║  Theme heatmap: which themes appear across participants       ║
-║  Saturation tracking: are new themes still emerging?         ║
-║  Participant segmentation: who clusters by theme pattern     ║
-║  Codebook iteration: confirm / add / split / retire codes    ║
+║         └──► Map each turn to guide sections/questions        ║
+║              Researcher reviews and corrects mappings         ║
 ╚══════════════════════════════════════════════════════════════╝
                           │
                           ▼
 ╔══════════════════════════════════════════════════════════════╗
-║  SYNTHESIS                                                   ║
+║  STEP 3 — PULL OUT THEMES  (AI-led, researcher reviews)      ║
 ║                                                              ║
-║  AI generates candidate insight statements                   ║
-║    Ranked by: frequency + emotional salience +               ║
-║    alignment to research objectives                          ║
-║  Each insight: theme + quotes + participant count            ║
-║  Human editorial review ← researcher judgement essential     ║
+║  For each organised transcript:                              ║
+║         │                                                    ║
+║         └──► Surface emergent themes with supporting quotes   ║
+║              Researcher reviews, merges, or discards themes  ║
 ╚══════════════════════════════════════════════════════════════╝
                           │
                           ▼
 ╔══════════════════════════════════════════════════════════════╗
-║  REPORT                                                      ║
+║  STEP 4 — INSIGHTS  (AI-led, researcher reviews & edits)     ║
+║                                                              ║
+║  Compare all interviews and themes with each other           ║
+║         │                                                    ║
+║         ├──► Identify shared patterns, common pains,         ║
+║         │    alike themes across participants                 ║
+║         │                                                    ║
+║         ├──► Generate candidate insight statements            ║
+║         │    Each: one-sentence summary + hero quote          ║
+║         │                                                    ║
+║         └──► Provide citations and source trail               ║
+║                                                              ║
+║  Researcher reviews, edits, and approves insights            ║
+╚══════════════════════════════════════════════════════════════╝
+                          │
+                          ▼
+╔══════════════════════════════════════════════════════════════╗
+║  STEP 5 — REPORT  (AI drafts, researcher finalises)          ║
 ║                                                              ║
 ║  Key Insights → Observations → Recommendations               ║
-║  All claims linked to coded evidence and source quotes       ║
-║  Human review and finalisation                               ║
+║  All claims linked to evidence and source quotes             ║
+║  Researcher reviews and finalises before delivery            ║
 ╚══════════════════════════════════════════════════════════════╝
 ```
-
----
-
-## The Three Biggest Improvements
-
-**1. Machine-readable inputs from day one**
-Research objectives, interview guide, and codebook become structured YAML/JSON, not Word docs. AI uses them as ground truth throughout the entire pipeline — not just at step 4.
-
-**2. Per-session feedback loop**
-Don't wait until all interviews are done. After session 1, the tool surfaces which questions got shallow answers, what emerged unexpectedly, and what to probe harder in session 2. Each subsequent interview is smarter than the last.
-
-**3. Saturation detection**
-A principled answer to "when do we have enough data?" Cross-session theme tracking shows when new sessions stop producing new themes — that's the signal to stop collecting and start synthesising.
 
 ---
 
