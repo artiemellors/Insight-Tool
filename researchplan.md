@@ -1068,7 +1068,7 @@ Researcher reads brief before Askable interview
 - Guide coverage report: questions covered, skipped, shallow
 - Basic annotated transcript view: turns highlighted by code, linked to source
 
-**Stack:** FastAPI + PostgreSQL + Claude API + React
+**Stack:** FastAPI + Supabase (PostgreSQL + Auth + Storage) + Claude API + React
 
 ---
 
@@ -1157,52 +1157,29 @@ PROBE:  Add to OB2 — "Did you look for help anywhere?" (surfaced organically i
 
 ## Technical Stack
 
+### Platform
+
+| Component | Technology | Why |
+|---|---|---|
+| **Database** | Supabase (PostgreSQL) | Hosted Postgres with auth, file storage, and realtime — avoids managing infra |
+| **File storage** | Supabase Storage | Transcript and guide uploads stored in buckets; accessed via signed URLs |
+| **Auth** | Supabase Auth | Design team login; row-level security on study data |
+| **Backend** | FastAPI | Python API layer between frontend and Claude; owns analysis orchestration |
+| **Frontend** | React | Hosted web app used by the design team |
+| **AI** | Claude API (`anthropic` SDK) | All analysis — guide parsing, transcript organisation, theme extraction, insight synthesis |
+| **Validation** | Pydantic | Structured output validation on all AI responses |
+
 ### Parsing
 
 | Library | Purpose |
 |---|---|
 | `webvtt-py` | VTT files |
 | `python-docx` | DOCX files |
-| `pdfplumber` | PDF files (structured layout) |
-| `PyMuPDF (fitz)` | Complex / scanned PDFs |
-| `PyYAML` | Interview guide + codebook YAML |
+| `pdfplumber` / `PyMuPDF` | PDF files |
 
-### NLP / Embedding
+### Hosting
 
-| Library | Purpose |
-|---|---|
-| `sentence-transformers` | Embedding pre-filter (cosine similarity) |
-| `scikit-learn` | Occurrence matrix, clustering emergent themes |
-| `presidio-analyzer` | PII redaction before LLM calls |
-
-### Output
-
-| Library | Purpose |
-|---|---|
-| `Jinja2` | Annotated transcript HTML |
-| `pandas` | Theme heatmaps, cross-session analysis |
-
-### Core
-
-| Library | Purpose |
-|---|---|
-| `anthropic` | All LLM calls — deductive coding, depth scoring, emergent themes, synthesis, agent orchestration |
-| `Pydantic` | Structured output validation at every agent boundary |
-| FastAPI | Backend API |
-| PostgreSQL | Data persistence (StudyState, coded turns, cross-session heatmap) |
-| React | Frontend |
-
-### Agent Orchestration
-
-| Pattern | Implementation |
-|---|---|
-| Orchestrator | Single FastAPI service; owns `StudyState` mutation; routes tasks to specialist agents |
-| Specialist agents | Separate async functions with typed Pydantic inputs/outputs; called via Claude tool use |
-| Parallel fan-out | `asyncio.gather()` for Guide Coverage + Deductive Coder on same session |
-| Shared state | `StudyState` persisted in PostgreSQL; agents read from DB, write via Orchestrator |
-| Extended thinking | `thinking` parameter enabled on Brief Agent, Codebook Seeder, Insight Generator |
-| Human gate | Orchestrator sets `review_status=pending`; waits for researcher API call to confirm/edit before proceeding |
-| Event trigger | Saturation Monitor runs as a background task after each session commit; fires webhook to Orchestrator when threshold met |
+The tool is a hosted web application used by the design team. Supabase handles data persistence, file storage, and authentication. The FastAPI backend and React frontend are deployed separately (hosting provider TBD).
 
 ---
 
