@@ -16,7 +16,7 @@ Insight Tool is an AI-augmented research analysis platform that analyzes custome
 **Backend:** FastAPI, PostgreSQL, Pydantic (structured output validation)
 **Frontend:** React
 **AI:** Claude API (Sonnet 4.6) — extended thinking enabled for Brief Agent, Codebook Seeder, and Insight Generator only
-**NLP/Parsing:** sentence-transformers (embeddings), webvtt-py, python-docx, pdfplumber/PyMuPDF, presidio-analyzer (PII detection)
+**NLP/Parsing:** sentence-transformers (embeddings), webvtt-py, presidio-analyzer (PII detection)
 **Analysis:** scikit-learn, pandas, Jinja2 (HTML report generation)
 **Config formats:** YAML for research brief, interview guide, and codebook
 

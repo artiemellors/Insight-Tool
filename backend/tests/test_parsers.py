@@ -27,14 +27,8 @@ class TestDetectFormat:
     def test_srt(self):
         assert detect_format("interview.srt") == TranscriptFormat.SRT
 
-    def test_docx(self):
-        assert detect_format("interview.docx") == TranscriptFormat.DOCX
-
     def test_txt(self):
         assert detect_format("interview.txt") == TranscriptFormat.TXT
-
-    def test_pdf(self):
-        assert detect_format("interview.pdf") == TranscriptFormat.PDF
 
     def test_json(self):
         assert detect_format("interview.json") == TranscriptFormat.JSON
