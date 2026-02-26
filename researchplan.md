@@ -8,113 +8,86 @@ Build an AI-assisted tool that analyses customer interview transcripts and/or vi
 
 ---
 
-## Current Research Process
+## Research Process
 
-The baseline process this tool is designed to support and augment:
+Five steps from raw inputs to finished report. The researcher uploads and reviews; AI does the analytical heavy lifting.
 
-| Step | Activity | Current State |
+| Step | Activity | What happens |
 |---|---|---|
-| 1 | Theme research & discovery plan objectives | Manual — lives in a document |
-| 2 | Create interview guide to target research objectives | Manual — unstructured doc |
-| 3 | Interview customers on Askable platform | Human-led |
-| 4 | Take raw transcript files → organise answers against guide | Partially AI-assisted |
-| 5 | Analyse cleaned transcripts → compare for patterns & themes | Manual, labour-intensive |
-| 6 | Synthesise insights with citations and evidence trail | Manual |
-| 7 | Compile report: Key Insights, Observations, Recommendations | Manual |
-
-**Key problems:**
-- Inputs (objectives, guide, codebook) are unstructured — AI can only bolt on at step 4
-- Steps run waterfall — session 1 can't inform session 2's approach
-- "Organise answers against the guide" is under-ambitious — sorting, not analysis
-- No principled signal for when you have enough data (saturation)
-- Codebook is implicit, not explicit — limits systematic analysis
+| 1 | **Upload Research Guide** | Researcher uploads their research guide. AI analyses the guide structure — identifies sections, questions, and objectives — so it can use this as the framework for all downstream analysis. |
+| 2 | **Upload & Organise Transcripts** | Researcher uploads raw interview transcripts. AI parses them into speaker turns and organises responses against the corresponding guide sections and questions. Researcher reviews the mappings. |
+| 3 | **Theme Analysis** | AI works through each organised transcript individually and surfaces emergent themes with supporting quotes. Researcher reviews, merges, or discards themes per transcript. |
+| 4 | **Insight Synthesis** | AI merges themes across all interview transcripts — identifies shared patterns, common pains, and alike themes. Generates candidate insights: a one-sentence summary capturing the essence, a hero quote that illustrates it, and clear citations with source trail. Researcher reviews and edits. |
+| 5 | **Insight & Recommendation Report** | AI compiles the final deliverable: robust evidence trail, concise insight summaries, and useful visualisations. Researcher finalises before delivery. |
 
 ---
 
-## Improved Process with AI & Agentic Flows
+## How AI Works With Us
 
 ```
 ╔══════════════════════════════════════════════════════════════╗
-║  PRE-RESEARCH                                                ║
+║  STEP 1 — UPLOAD RESEARCH GUIDE                              ║
 ║                                                              ║
-║  Research Brief (structured YAML)                            ║
-║    Objectives → hypotheses → participant criteria            ║
+║  Researcher uploads their guide                              ║
 ║         │                                                    ║
-║         ▼                                                    ║
-║  AI-assisted Interview Guide                                 ║
-║    Generated from brief → probes suggested                   ║
-║    Flags: leading questions, gaps vs. objectives             ║
-║         │                                                    ║
-║         ▼                                                    ║
-║  Codebook / Theme Guide (explicit YAML)                      ║
-║    Themes expected from hypotheses → deductive codes         ║
+║         └──► AI analyses guide structure                      ║
+║              Identifies sections, questions, objectives       ║
+║              This becomes the framework for all analysis      ║
 ╚══════════════════════════════════════════════════════════════╝
                           │
                           ▼  [Interviews run on Askable]
 ╔══════════════════════════════════════════════════════════════╗
-║  PER SESSION  (runs after each interview — not in batch)     ║
+║  STEP 2 — UPLOAD & ORGANISE TRANSCRIPTS                      ║
 ║                                                              ║
-║  Ingest from Askable → auto-detect format → parse to turns   ║
+║  Researcher uploads raw transcripts                          ║
 ║         │                                                    ║
-║         ├──► Guide Coverage Analysis                         ║
-║         │      Which questions covered? Depth scored?        ║
-║         │      Probes used? Off-script moments classified?   ║
+║         ├──► AI parses into speaker turns                     ║
 ║         │                                                    ║
-║         ├──► Deductive Coding (against codebook)             ║
-║         │      Apply expected themes → confidence + quote    ║
-║         │                                                    ║
-║         ├──► Inductive Pass (uncoded turns)                  ║
-║         │      What emerged not in guide or codebook?        ║
-║         │                                                    ║
-║         ├──► Human Review Gate ← low-confidence codes        ║
-║         │                                                    ║
-║         └──► Session Quality Scorecard                       ║
-║                Feeds back into next interview preparation    ║
-╚══════════════════════════════════════════════════════════════╝
-                          │
-                          ▼  [Updated after each new session]
-╔══════════════════════════════════════════════════════════════╗
-║  CROSS-SESSION                                               ║
-║                                                              ║
-║  Theme heatmap: which themes appear across participants       ║
-║  Saturation tracking: are new themes still emerging?         ║
-║  Participant segmentation: who clusters by theme pattern     ║
-║  Codebook iteration: confirm / add / split / retire codes    ║
+║         └──► AI organises responses against guide             ║
+║              sections and questions                           ║
+║              Researcher reviews mappings                      ║
 ╚══════════════════════════════════════════════════════════════╝
                           │
                           ▼
 ╔══════════════════════════════════════════════════════════════╗
-║  SYNTHESIS                                                   ║
+║  STEP 3 — THEME ANALYSIS  (per transcript)                   ║
 ║                                                              ║
-║  AI generates candidate insight statements                   ║
-║    Ranked by: frequency + emotional salience +               ║
-║    alignment to research objectives                          ║
-║  Each insight: theme + quotes + participant count            ║
-║  Human editorial review ← researcher judgement essential     ║
+║  For each organised transcript:                              ║
+║         │                                                    ║
+║         └──► AI surfaces emergent themes with                 ║
+║              supporting quotes                                ║
+║              Researcher reviews, merges, or discards          ║
 ╚══════════════════════════════════════════════════════════════╝
                           │
                           ▼
 ╔══════════════════════════════════════════════════════════════╗
-║  REPORT                                                      ║
+║  STEP 4 — INSIGHT SYNTHESIS  (across all transcripts)        ║
 ║                                                              ║
-║  Key Insights → Observations → Recommendations               ║
-║  All claims linked to coded evidence and source quotes       ║
-║  Human review and finalisation                               ║
+║  AI merges themes across all interviews                      ║
+║         │                                                    ║
+║         ├──► Shared patterns, common pains, alike themes      ║
+║         │                                                    ║
+║         ├──► Candidate insights: one-sentence summary         ║
+║         │    + hero quote that illustrates it                 ║
+║         │                                                    ║
+║         └──► Citations and source trail for each              ║
+║                                                              ║
+║  Researcher reviews, edits, and approves                     ║
+╚══════════════════════════════════════════════════════════════╝
+                          │
+                          ▼
+╔══════════════════════════════════════════════════════════════╗
+║  STEP 5 — INSIGHT & RECOMMENDATION REPORT                    ║
+║                                                              ║
+║  AI compiles final deliverable:                              ║
+║         │                                                    ║
+║         ├──► Robust evidence trail                            ║
+║         ├──► Concise insight summaries                        ║
+║         └──► Useful visualisations                            ║
+║                                                              ║
+║  Researcher reviews and finalises before delivery            ║
 ╚══════════════════════════════════════════════════════════════╝
 ```
-
----
-
-## The Three Biggest Improvements
-
-**1. Machine-readable inputs from day one**
-Research objectives, interview guide, and codebook become structured YAML/JSON, not Word docs. AI uses them as ground truth throughout the entire pipeline — not just at step 4.
-
-**2. Per-session feedback loop**
-Don't wait until all interviews are done. After session 1, the tool surfaces which questions got shallow answers, what emerged unexpectedly, and what to probe harder in session 2. Each subsequent interview is smarter than the last.
-
-**3. Saturation detection**
-A principled answer to "when do we have enough data?" Cross-session theme tracking shows when new sessions stop producing new themes — that's the signal to stop collecting and start synthesising.
 
 ---
 
@@ -1095,7 +1068,7 @@ Researcher reads brief before Askable interview
 - Guide coverage report: questions covered, skipped, shallow
 - Basic annotated transcript view: turns highlighted by code, linked to source
 
-**Stack:** FastAPI + PostgreSQL + Claude API + React
+**Stack:** FastAPI + Supabase (PostgreSQL + Auth + Storage) + Claude API + React
 
 ---
 
@@ -1184,52 +1157,29 @@ PROBE:  Add to OB2 — "Did you look for help anywhere?" (surfaced organically i
 
 ## Technical Stack
 
+### Platform
+
+| Component | Technology | Why |
+|---|---|---|
+| **Database** | Supabase (PostgreSQL) | Hosted Postgres with auth, file storage, and realtime — avoids managing infra |
+| **File storage** | Supabase Storage | Transcript and guide uploads stored in buckets; accessed via signed URLs |
+| **Auth** | Supabase Auth | Design team login; row-level security on study data |
+| **Backend** | FastAPI | Python API layer between frontend and Claude; owns analysis orchestration |
+| **Frontend** | React | Hosted web app used by the design team |
+| **AI** | Claude API (`anthropic` SDK) | All analysis — guide parsing, transcript organisation, theme extraction, insight synthesis |
+| **Validation** | Pydantic | Structured output validation on all AI responses |
+
 ### Parsing
 
 | Library | Purpose |
 |---|---|
 | `webvtt-py` | VTT files |
 | `python-docx` | DOCX files |
-| `pdfplumber` | PDF files (structured layout) |
-| `PyMuPDF (fitz)` | Complex / scanned PDFs |
-| `PyYAML` | Interview guide + codebook YAML |
+| `pdfplumber` / `PyMuPDF` | PDF files |
 
-### NLP / Embedding
+### Hosting
 
-| Library | Purpose |
-|---|---|
-| `sentence-transformers` | Embedding pre-filter (cosine similarity) |
-| `scikit-learn` | Occurrence matrix, clustering emergent themes |
-| `presidio-analyzer` | PII redaction before LLM calls |
-
-### Output
-
-| Library | Purpose |
-|---|---|
-| `Jinja2` | Annotated transcript HTML |
-| `pandas` | Theme heatmaps, cross-session analysis |
-
-### Core
-
-| Library | Purpose |
-|---|---|
-| `anthropic` | All LLM calls — deductive coding, depth scoring, emergent themes, synthesis, agent orchestration |
-| `Pydantic` | Structured output validation at every agent boundary |
-| FastAPI | Backend API |
-| PostgreSQL | Data persistence (StudyState, coded turns, cross-session heatmap) |
-| React | Frontend |
-
-### Agent Orchestration
-
-| Pattern | Implementation |
-|---|---|
-| Orchestrator | Single FastAPI service; owns `StudyState` mutation; routes tasks to specialist agents |
-| Specialist agents | Separate async functions with typed Pydantic inputs/outputs; called via Claude tool use |
-| Parallel fan-out | `asyncio.gather()` for Guide Coverage + Deductive Coder on same session |
-| Shared state | `StudyState` persisted in PostgreSQL; agents read from DB, write via Orchestrator |
-| Extended thinking | `thinking` parameter enabled on Brief Agent, Codebook Seeder, Insight Generator |
-| Human gate | Orchestrator sets `review_status=pending`; waits for researcher API call to confirm/edit before proceeding |
-| Event trigger | Saturation Monitor runs as a background task after each session commit; fires webhook to Orchestrator when threshold met |
+The tool is a hosted web application used by the design team. Supabase handles data persistence, file storage, and authentication. The FastAPI backend and React frontend are deployed separately (hosting provider TBD).
 
 ---
 
