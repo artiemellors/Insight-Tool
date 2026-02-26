@@ -1,0 +1,4 @@
+Interviewer: Thanks for joining. Can you walk me through your first login?
+Participant: When I first logged in I saw the dashboard but couldn't find settings. I kept clicking different tabs.
+Interviewer: What did you expect?
+Participant: I expected a setup wizard. Instead I just Googled it.

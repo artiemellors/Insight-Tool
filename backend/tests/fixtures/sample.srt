@@ -1,0 +1,15 @@
+1
+00:00:05,000 --> 00:00:12,000
+Interviewer: Thanks for joining. Can you walk me through your first login?
+
+2
+00:00:13,000 --> 00:00:25,000
+Participant: When I first logged in I saw the dashboard but couldn't find settings.
+
+3
+00:00:26,000 --> 00:00:35,000
+Interviewer: What did you expect?
+
+4
+00:00:36,000 --> 00:00:50,000
+Participant: I expected a setup wizard. Instead I Googled it.
