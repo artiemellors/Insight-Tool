@@ -2,30 +2,24 @@
 
 from __future__ import annotations
 
-import shutil
 import tempfile
 from pathlib import Path
 
 from fastapi import APIRouter, HTTPException, UploadFile
 
+from app import db
 from app.agents.orchestrator import Orchestrator
 from app.export import export_session, export_study
 from app.models.core import Session, SessionExport, StudyExport, StudyState
 
 router = APIRouter(prefix="/api")
 
-# In-memory store for MVP. Replace with database in Phase 2.
-_studies: dict[str, StudyState] = {}
 _orchestrator = Orchestrator()
 
 
 # ---------------------------------------------------------------------------
 # Study CRUD
 # ---------------------------------------------------------------------------
-
-class CreateStudyRequest:
-    pass  # Using query params for simplicity in MVP
-
 
 @router.post("/studies", response_model=StudyState)
 async def create_study(
@@ -39,14 +33,14 @@ async def create_study(
         product_area=product_area,
         research_objectives=objectives or [],
     )
-    _studies[state.study_id] = state
+    db.save_study(state)
     return state
 
 
 @router.get("/studies/{study_id}", response_model=StudyState)
 async def get_study(study_id: str) -> StudyState:
     """Get a study by ID."""
-    state = _studies.get(study_id)
+    state = db.get_study(study_id)
     if state is None:
         raise HTTPException(status_code=404, detail="Study not found")
     return state
@@ -55,7 +49,7 @@ async def get_study(study_id: str) -> StudyState:
 @router.get("/studies", response_model=list[StudyState])
 async def list_studies() -> list[StudyState]:
     """List all studies."""
-    return list(_studies.values())
+    return db.list_studies()
 
 
 # ---------------------------------------------------------------------------
@@ -65,7 +59,7 @@ async def list_studies() -> list[StudyState]:
 @router.post("/studies/{study_id}/guide", response_model=StudyState)
 async def upload_guide(study_id: str, file: UploadFile) -> StudyState:
     """Upload an interview guide (YAML or JSON)."""
-    state = _studies.get(study_id)
+    state = db.get_study(study_id)
     if state is None:
         raise HTTPException(status_code=404, detail="Study not found")
 
@@ -75,13 +69,14 @@ async def upload_guide(study_id: str, file: UploadFile) -> StudyState:
     finally:
         tmp_path.unlink(missing_ok=True)
 
+    db.save_study(state)
     return state
 
 
 @router.post("/studies/{study_id}/codebook", response_model=StudyState)
 async def upload_codebook(study_id: str, file: UploadFile) -> StudyState:
     """Upload a codebook (YAML or JSON)."""
-    state = _studies.get(study_id)
+    state = db.get_study(study_id)
     if state is None:
         raise HTTPException(status_code=404, detail="Study not found")
 
@@ -91,6 +86,7 @@ async def upload_codebook(study_id: str, file: UploadFile) -> StudyState:
     finally:
         tmp_path.unlink(missing_ok=True)
 
+    db.save_study(state)
     return state
 
 
@@ -111,9 +107,10 @@ async def upload_and_analyse_transcript(
     1. Parses the transcript into Turn objects
     2. Creates a new Session
     3. Runs Guide Coverage + Deductive Coding in parallel
-    4. Returns the fully analysed Session
+    4. Persists the analysed session to Supabase
+    5. Returns the fully analysed Session
     """
-    state = _studies.get(study_id)
+    state = db.get_study(study_id)
     if state is None:
         raise HTTPException(status_code=404, detail="Study not found")
 
@@ -134,6 +131,9 @@ async def upload_and_analyse_transcript(
     # Run analysis
     session = await _orchestrator.analyse_session(state, session)
 
+    # Persist the analysed session
+    db.save_session(session, study_id)
+
     return session
 
 
@@ -143,15 +143,10 @@ async def upload_and_analyse_transcript(
 )
 async def get_session(study_id: str, session_id: str) -> Session:
     """Get a specific session by ID."""
-    state = _studies.get(study_id)
-    if state is None:
-        raise HTTPException(status_code=404, detail="Study not found")
-
-    for s in state.sessions:
-        if s.session_id == session_id:
-            return s
-
-    raise HTTPException(status_code=404, detail="Session not found")
+    session = db.get_session(study_id, session_id)
+    if session is None:
+        raise HTTPException(status_code=404, detail="Session not found")
+    return session
 
 
 # ---------------------------------------------------------------------------
@@ -169,7 +164,7 @@ async def export_study_json(study_id: str) -> StudyExport:
     the source transcript turn (speaker, quote, timestamp, session, participant)
     so that any finding can be verified against the original data.
     """
-    state = _studies.get(study_id)
+    state = db.get_study(study_id)
     if state is None:
         raise HTTPException(status_code=404, detail="Study not found")
     return export_study(state)
@@ -185,16 +180,11 @@ async def export_session_json(study_id: str, session_id: str) -> SessionExport:
     Each code application and coverage result links directly to the transcript
     turn that supports it, including exact quotes and timestamps.
     """
-    state = _studies.get(study_id)
+    state = db.get_study(study_id)
     if state is None:
         raise HTTPException(status_code=404, detail="Study not found")
 
-    session = None
-    for s in state.sessions:
-        if s.session_id == session_id:
-            session = s
-            break
-
+    session = db.get_session(study_id, session_id)
     if session is None:
         raise HTTPException(status_code=404, detail="Session not found")
 
