@@ -1,0 +1,41 @@
+themes:
+  - name: Navigation Confusion
+    codes:
+      - id: CONFUSION_NAV
+        definition: "Participant expresses difficulty locating a UI element or understanding layout"
+        indicators:
+          - "couldn't find"
+          - "kept clicking"
+          - "didn't know where"
+        example_quotes:
+          - "I just kept clicking different tabs"
+        code_type: deductive
+      - id: CONFUSION_MENTAL_MODEL
+        definition: "Participant's expectation of system behaviour does not match actual behaviour"
+        indicators:
+          - "expected"
+          - "thought it would"
+          - "surprised"
+        example_quotes:
+          - "I expected a setup wizard"
+        code_type: deductive
+  - name: Workarounds
+    codes:
+      - id: WORKAROUND_SELF
+        definition: "Participant finds their own solution rather than using in-product help"
+        indicators:
+          - "Googled it"
+          - "figured it out"
+          - "found a way"
+        example_quotes:
+          - "I honestly just Googled it"
+        code_type: deductive
+      - id: WORKAROUND_EXT
+        definition: "Participant relies on external people for help"
+        indicators:
+          - "asked a colleague"
+          - "asked someone"
+          - "got help from"
+        example_quotes:
+          - "I asked a colleague"
+        code_type: deductive

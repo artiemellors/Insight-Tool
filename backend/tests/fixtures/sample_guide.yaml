@@ -1,0 +1,26 @@
+sections:
+  - name: Core Questions
+    questions:
+      - id: OB1
+        text: "Walk me through your first login experience"
+        required: true
+        mapped_objective: "Understand onboarding friction"
+        probes:
+          - "What did you expect to see?"
+          - "Were you surprised by anything?"
+      - id: OB2
+        text: "Was there a moment where you felt stuck?"
+        required: true
+        mapped_objective: "Identify pain points"
+        probes:
+          - "Did you look for help anywhere?"
+  - name: Feature Discovery
+    questions:
+      - id: FD1
+        text: "How did you discover new features over time?"
+        required: false
+        mapped_objective: "Feature discovery patterns"
+      - id: FD2
+        text: "Have you tried exporting data from the product?"
+        required: false
+        mapped_objective: "Export workflow"

@@ -1,0 +1,26 @@
+[
+  {
+    "speaker": "Interviewer",
+    "text": "Thanks for joining. Can you walk me through your first login?",
+    "start": 5.0,
+    "end": 12.0
+  },
+  {
+    "speaker": "Participant",
+    "text": "When I first logged in I saw the dashboard but couldn't find settings.",
+    "start": 13.0,
+    "end": 25.0
+  },
+  {
+    "speaker": "Interviewer",
+    "text": "What did you expect?",
+    "start": 26.0,
+    "end": 30.0
+  },
+  {
+    "speaker": "Participant",
+    "text": "I expected a setup wizard. Instead I just Googled it.",
+    "start": 31.0,
+    "end": 40.0
+  }
+]
