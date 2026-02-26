@@ -9,7 +9,8 @@ from pathlib import Path
 from fastapi import APIRouter, HTTPException, UploadFile
 
 from app.agents.orchestrator import Orchestrator
-from app.models.core import Session, StudyState
+from app.export import export_session, export_study
+from app.models.core import Session, SessionExport, StudyExport, StudyState
 
 router = APIRouter(prefix="/api")
 
@@ -151,6 +152,53 @@ async def get_session(study_id: str, session_id: str) -> Session:
             return s
 
     raise HTTPException(status_code=404, detail="Session not found")
+
+
+# ---------------------------------------------------------------------------
+# Structured JSON export — traceable, evidence-backed output
+# ---------------------------------------------------------------------------
+
+@router.get(
+    "/studies/{study_id}/export",
+    response_model=StudyExport,
+)
+async def export_study_json(study_id: str) -> StudyExport:
+    """Export the full study as structured JSON with evidence traceability.
+
+    Every coded turn and coverage result includes a direct reference back to
+    the source transcript turn (speaker, quote, timestamp, session, participant)
+    so that any finding can be verified against the original data.
+    """
+    state = _studies.get(study_id)
+    if state is None:
+        raise HTTPException(status_code=404, detail="Study not found")
+    return export_study(state)
+
+
+@router.get(
+    "/studies/{study_id}/sessions/{session_id}/export",
+    response_model=SessionExport,
+)
+async def export_session_json(study_id: str, session_id: str) -> SessionExport:
+    """Export a single session as structured JSON with evidence traceability.
+
+    Each code application and coverage result links directly to the transcript
+    turn that supports it, including exact quotes and timestamps.
+    """
+    state = _studies.get(study_id)
+    if state is None:
+        raise HTTPException(status_code=404, detail="Study not found")
+
+    session = None
+    for s in state.sessions:
+        if s.session_id == session_id:
+            session = s
+            break
+
+    if session is None:
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    return export_session(session, state.interview_guide, state.codebook)
 
 
 # ---------------------------------------------------------------------------

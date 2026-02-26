@@ -169,3 +169,73 @@ class StudyState(BaseModel):
     codebook: Optional[Codebook] = None
     sessions: list[Session] = Field(default_factory=list)
     created_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+# ---------------------------------------------------------------------------
+# Structured JSON export — traceable, evidence-backed output
+# ---------------------------------------------------------------------------
+
+class EvidenceRef(BaseModel):
+    """A single piece of evidence linking back to a specific transcript location."""
+
+    turn_index: int
+    speaker: str
+    quote: str = Field(description="Exact text excerpt used as evidence")
+    timestamp_start: Optional[float] = Field(
+        default=None, description="Seconds from transcript start"
+    )
+    session_id: str
+    participant_id: str
+
+
+class CodeApplication(BaseModel):
+    """A code applied to a turn, with full evidence traceability."""
+
+    code_id: str
+    code_definition: str
+    theme: str
+    confidence: float = Field(ge=0.0, le=1.0)
+    needs_review: bool
+    evidence: EvidenceRef
+
+
+class CoverageDetail(BaseModel):
+    """Coverage result for a single guide question, with supporting evidence."""
+
+    question_id: str
+    question_text: str
+    section: str
+    covered: bool
+    depth_score: Optional[int] = Field(default=None, ge=1, le=5)
+    notes: Optional[str] = None
+    supporting_evidence: list[EvidenceRef] = Field(default_factory=list)
+
+
+class SessionExport(BaseModel):
+    """Fully traceable export of a single session's analysis."""
+
+    session_id: str
+    participant_id: str
+    turn_count: int
+    coverage: list[CoverageDetail] = Field(default_factory=list)
+    coded_evidence: list[CodeApplication] = Field(default_factory=list)
+    emergent_themes: list[EmergentTheme] = Field(default_factory=list)
+    scorecard: Optional[SessionScorecard] = None
+
+
+class StudyExport(BaseModel):
+    """Full study export with evidence chain for every finding.
+
+    Design principle: every coded turn and coverage result links back to
+    the exact transcript turn, speaker, quote, and timestamp so that
+    downstream consumers can verify any claim against the source material.
+    """
+
+    study_id: str
+    study_name: str
+    product_area: str
+    research_objectives: list[str]
+    exported_at: datetime = Field(default_factory=datetime.utcnow)
+    codebook_version: Optional[int] = None
+    guide_version: Optional[int] = None
+    sessions: list[SessionExport] = Field(default_factory=list)
