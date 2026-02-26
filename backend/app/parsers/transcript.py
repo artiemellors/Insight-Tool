@@ -1,6 +1,6 @@
 """Multi-format transcript parser.
 
-Supports VTT, SRT, DOCX, TXT, PDF, and JSON transcript files.
+Supports VTT, SRT, TXT, and JSON transcript files.
 All formats are normalised to a list of Turn objects.
 """
 
@@ -18,9 +18,7 @@ from app.models.core import Turn
 class TranscriptFormat(str, Enum):
     VTT = "vtt"
     SRT = "srt"
-    DOCX = "docx"
     TXT = "txt"
-    PDF = "pdf"
     JSON = "json"
 
 
@@ -34,9 +32,7 @@ def detect_format(file_path: str | Path) -> TranscriptFormat:
     mapping = {
         ".vtt": TranscriptFormat.VTT,
         ".srt": TranscriptFormat.SRT,
-        ".docx": TranscriptFormat.DOCX,
         ".txt": TranscriptFormat.TXT,
-        ".pdf": TranscriptFormat.PDF,
         ".json": TranscriptFormat.JSON,
     }
     fmt = mapping.get(suffix)
@@ -99,29 +95,6 @@ def _parse_srt(file_path: Path) -> list[Turn]:
     return _merge_consecutive_speaker_turns(turns)
 
 
-def _parse_docx(file_path: Path) -> list[Turn]:
-    """Parse a DOCX transcript. Expects 'Speaker: text' lines."""
-    import docx
-
-    doc = docx.Document(str(file_path))
-    turns: list[Turn] = []
-    idx = 0
-
-    for para in doc.paragraphs:
-        text = para.text.strip()
-        if not text:
-            continue
-        speaker, content = _split_speaker(text)
-        turns.append(Turn(
-            turn_index=idx,
-            speaker=speaker or "Unknown",
-            text=content.strip(),
-        ))
-        idx += 1
-
-    return _merge_consecutive_speaker_turns(turns)
-
-
 def _parse_txt(file_path: Path) -> list[Turn]:
     """Parse a plain text transcript. Expects 'Speaker: text' lines."""
     content = file_path.read_text(encoding="utf-8")
@@ -139,33 +112,6 @@ def _parse_txt(file_path: Path) -> list[Turn]:
             text=text.strip(),
         ))
         idx += 1
-
-    return _merge_consecutive_speaker_turns(turns)
-
-
-def _parse_pdf(file_path: Path) -> list[Turn]:
-    """Parse a PDF transcript using pdfplumber."""
-    import pdfplumber
-
-    turns: list[Turn] = []
-    idx = 0
-
-    with pdfplumber.open(str(file_path)) as pdf:
-        for page in pdf.pages:
-            text = page.extract_text()
-            if not text:
-                continue
-            for line in text.split("\n"):
-                line = line.strip()
-                if not line:
-                    continue
-                speaker, content = _split_speaker(line)
-                turns.append(Turn(
-                    turn_index=idx,
-                    speaker=speaker or "Unknown",
-                    text=content.strip(),
-                ))
-                idx += 1
 
     return _merge_consecutive_speaker_turns(turns)
 
@@ -298,9 +244,7 @@ def _merge_consecutive_speaker_turns(turns: list[Turn]) -> list[Turn]:
 _PARSER_MAP = {
     TranscriptFormat.VTT: _parse_vtt,
     TranscriptFormat.SRT: _parse_srt,
-    TranscriptFormat.DOCX: _parse_docx,
     TranscriptFormat.TXT: _parse_txt,
-    TranscriptFormat.PDF: _parse_pdf,
     TranscriptFormat.JSON: _parse_json,
 }
 

@@ -237,7 +237,7 @@ This is a three-step sequence. No AI analysis begins until anonymisation is conf
 │  ┌─────────────────────────────────────────────┐   │
 │  │  Drag transcript file here                  │   │
 │  │  or click to browse                         │   │
-│  │  .vtt  .srt  .docx  .pdf  .txt  .json       │   │
+│  │  .vtt  .srt  .txt  .json                     │   │
 │  └─────────────────────────────────────────────┘   │
 │                                                     │
 │  Detected format: VTT                               │
@@ -799,8 +799,6 @@ Raw conversational text exported from Askable or any transcription platform:
 |---|---|
 | `.vtt` | Zoom, Teams, Otter.ai, Whisper |
 | `.srt` | Zoom, YouTube, older services |
-| `.docx` | Teams Word export, Rev human transcription |
-| `.pdf` | Rev.com deliverables, NVivo exports |
 | `.txt` | Otter.ai free, manual transcription |
 | `.json` | Rev.ai API, AssemblyAI API |
 
@@ -1059,7 +1057,7 @@ Researcher reads brief before Askable interview
 ### Phase 1 — MVP (4–6 weeks)
 *Goal: replace the manual "organise against guide" step with a robust analysis layer*
 
-- Multi-format transcript parser (VTT, SRT, DOCX, TXT, PDF, JSON)
+- Multi-format transcript parser (VTT, SRT, TXT, JSON)
 - Auto-detect format + normalise to canonical `Turn` objects
 - Interview guide upload (YAML/JSON) — questions, sections, probes
 - Theme guide / codebook upload (YAML/JSON) — codes, definitions, indicators, examples
@@ -1174,8 +1172,6 @@ PROBE:  Add to OB2 — "Did you look for help anywhere?" (surfaced organically i
 | Library | Purpose |
 |---|---|
 | `webvtt-py` | VTT files |
-| `python-docx` | DOCX files |
-| `pdfplumber` / `PyMuPDF` | PDF files |
 
 ### Hosting
 
