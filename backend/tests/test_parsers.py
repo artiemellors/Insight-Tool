@@ -135,6 +135,60 @@ class TestJSONParser:
 
 
 # ---------------------------------------------------------------------------
+# Markdown parser
+# ---------------------------------------------------------------------------
+
+class TestMarkdownParser:
+    def test_detect_md_format(self):
+        assert detect_format("interview.md") == TranscriptFormat.MD
+
+    def test_parses_turns(self):
+        turns = parse_transcript(FIXTURES / "sample_transcript.md")
+        assert len(turns) > 0
+
+    def test_detects_speakers(self):
+        turns = parse_transcript(FIXTURES / "sample_transcript.md")
+        speakers = {t.speaker for t in turns}
+        assert "Interviewer" in speakers
+        assert "Participant" in speakers
+
+    def test_extracts_timestamps(self):
+        turns = parse_transcript(FIXTURES / "sample_transcript.md")
+        # First turn should have a start timestamp of 5 seconds
+        assert turns[0].start == 5.0
+
+    def test_strips_timestamps_from_text(self):
+        turns = parse_transcript(FIXTURES / "sample_transcript.md")
+        for turn in turns:
+            assert "[0:" not in turn.text
+
+    def test_merges_consecutive_turns(self):
+        turns = parse_transcript(FIXTURES / "sample_transcript.md")
+        for i in range(1, len(turns)):
+            assert turns[i].speaker != turns[i - 1].speaker
+
+    def test_interviewer_tagging(self):
+        turns = parse_transcript(
+            FIXTURES / "sample_transcript.md",
+            interviewer_name="Interviewer",
+        )
+        interviewer_turns = [t for t in turns if t.is_interviewer]
+        participant_turns = [t for t in turns if not t.is_interviewer]
+        assert len(interviewer_turns) > 0
+        assert len(participant_turns) > 0
+
+    def test_correct_turn_count(self):
+        turns = parse_transcript(FIXTURES / "sample_transcript.md")
+        # 3 interviewer + 3 participant = 6 alternating turns
+        assert len(turns) == 6
+
+    def test_turn_indices_sequential(self):
+        turns = parse_transcript(FIXTURES / "sample_transcript.md")
+        for i, turn in enumerate(turns):
+            assert turn.turn_index == i
+
+
+# ---------------------------------------------------------------------------
 # Interview guide loader
 # ---------------------------------------------------------------------------
 

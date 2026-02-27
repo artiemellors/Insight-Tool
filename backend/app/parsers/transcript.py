@@ -1,6 +1,6 @@
 """Multi-format transcript parser.
 
-Supports VTT, SRT, TXT, and JSON transcript files.
+Supports VTT, SRT, TXT, JSON, and Markdown transcript files.
 All formats are normalised to a list of Turn objects.
 """
 
@@ -20,6 +20,7 @@ class TranscriptFormat(str, Enum):
     SRT = "srt"
     TXT = "txt"
     JSON = "json"
+    MD = "md"
 
 
 # ---------------------------------------------------------------------------
@@ -34,6 +35,7 @@ def detect_format(file_path: str | Path) -> TranscriptFormat:
         ".srt": TranscriptFormat.SRT,
         ".txt": TranscriptFormat.TXT,
         ".json": TranscriptFormat.JSON,
+        ".md": TranscriptFormat.MD,
     }
     fmt = mapping.get(suffix)
     if fmt is None:
@@ -145,6 +147,89 @@ def _parse_json(file_path: Path) -> list[Turn]:
     raise ValueError("Unsupported JSON transcript structure")
 
 
+# ---------------------------------------------------------------------------
+# Markdown parser
+# ---------------------------------------------------------------------------
+
+_MD_SPEAKER_BOLD = re.compile(
+    r"^\*\*(.+?)(?::\*\*|\*\*\s*:)\s*(.+)", re.DOTALL
+)
+_MD_SPEAKER_HEADING = re.compile(
+    r"^#{1,6}\s+(.+?)\s*:\s*(.+)", re.DOTALL
+)
+_MD_TIMESTAMP = re.compile(
+    r"\[(\d{1,2}:\d{2}(?::\d{2})?(?:\.\d+)?)\]"
+)
+
+
+def _parse_md(file_path: Path) -> list[Turn]:
+    """Parse a Markdown transcript into turns.
+
+    Supports common markdown transcript conventions:
+    - **Speaker Name:** text
+    - ## Speaker Name: text
+    - Optional [MM:SS] or [HH:MM:SS] timestamps anywhere in the line
+    - Continuation lines (non-speaker lines) are appended to the previous turn
+    """
+    content = file_path.read_text(encoding="utf-8")
+    turns: list[Turn] = []
+    idx = 0
+
+    for line in content.split("\n"):
+        stripped = line.strip()
+        if not stripped:
+            continue
+
+        # Skip metadata-only header lines (e.g. "# Interview Transcript")
+        if re.match(r"^#{1,6}\s+\w", stripped) and ":" not in stripped:
+            continue
+
+        # Try bold speaker pattern: **Speaker:** text
+        m = _MD_SPEAKER_BOLD.match(stripped)
+        if not m:
+            # Try heading speaker pattern: ## Speaker: text
+            m = _MD_SPEAKER_HEADING.match(stripped)
+
+        if m:
+            speaker = m.group(1).strip()
+            text = m.group(2).strip()
+
+            # Extract optional timestamp from text
+            start_seconds = None
+            ts_match = _MD_TIMESTAMP.search(text)
+            if ts_match:
+                start_seconds = _timestamp_to_seconds(ts_match.group(1))
+                text = text[:ts_match.start()].strip() + " " + text[ts_match.end():].strip()
+                text = text.strip()
+
+            turns.append(Turn(
+                turn_index=idx,
+                speaker=speaker,
+                text=text,
+                start=start_seconds,
+            ))
+            idx += 1
+        elif turns:
+            # Continuation line — append to previous turn
+            extra = stripped
+            ts_match = _MD_TIMESTAMP.search(extra)
+            if ts_match:
+                extra = extra[:ts_match.start()].strip() + " " + extra[ts_match.end():].strip()
+                extra = extra.strip()
+            if extra:
+                prev = turns[-1]
+                turns[-1] = Turn(
+                    turn_index=prev.turn_index,
+                    speaker=prev.speaker,
+                    text=f"{prev.text} {extra}",
+                    start=prev.start,
+                    end=prev.end,
+                    is_interviewer=prev.is_interviewer,
+                )
+
+    return _merge_consecutive_speaker_turns(turns)
+
+
 def _parse_revai_json(data: dict) -> list[Turn]:
     """Parse Rev.ai monologue-style JSON."""
     turns: list[Turn] = []
@@ -246,6 +331,7 @@ _PARSER_MAP = {
     TranscriptFormat.SRT: _parse_srt,
     TranscriptFormat.TXT: _parse_txt,
     TranscriptFormat.JSON: _parse_json,
+    TranscriptFormat.MD: _parse_md,
 }
 
 
