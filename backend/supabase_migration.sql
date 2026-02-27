@@ -42,6 +42,12 @@ CREATE INDEX IF NOT EXISTS idx_sessions_review_status ON sessions(review_status)
 ALTER TABLE studies  ENABLE ROW LEVEL SECURITY;
 ALTER TABLE sessions ENABLE ROW LEVEL SECURITY;
 
+-- Drop existing policies so this migration is re-runnable
+DROP POLICY IF EXISTS "Allow all for authenticated users" ON studies;
+DROP POLICY IF EXISTS "Allow all for authenticated users" ON sessions;
+DROP POLICY IF EXISTS "Service role full access" ON studies;
+DROP POLICY IF EXISTS "Service role full access" ON sessions;
+
 -- Allow all operations for authenticated users (tighten per-team in Phase 2)
 CREATE POLICY "Allow all for authenticated users" ON studies
     FOR ALL USING (auth.role() = 'authenticated');
